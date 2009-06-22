@@ -3,6 +3,8 @@
 A [Google Quick Search Box][qsb] plugin to enable access to items on the right
 side of your [Dock][].
 
+**Download the plugin: <http://github.com/mkhl/dock-items.hgs/downloads>**
+
 ## Usage
 
 * Hit you QSB keyboard shortcut.
