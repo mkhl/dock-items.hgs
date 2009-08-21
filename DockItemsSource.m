@@ -12,12 +12,12 @@ static NSString *const kDockItemsKey = @"persistent-others";
 static NSString *const kDockItemPathKey = @"tile-data.file-data._CFURLString";
 
 @interface DockItemsSource : HGSMemorySearchSource
-- (void) recacheContents;
+- (void)recacheContents;
 @end
 
 @implementation DockItemsSource
 
-- (id) initWithConfiguration:(NSDictionary *)configuration
+- (id)initWithConfiguration:(NSDictionary *)configuration
 {
   self = [super initWithConfiguration:configuration];
   if (self == nil)
@@ -32,24 +32,20 @@ static NSString *const kDockItemPathKey = @"tile-data.file-data._CFURLString";
   return self;
 }
 
-- (void) recacheContents
+- (void)recacheContents
 {
   [self clearResultIndex];
-  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-  NSDictionary *settings
-    = [defaults persistentDomainForName:kDockBundleIdentifier];
-  if (settings == nil)
-    return;
-  NSArray *items = [settings valueForKey:kDockItemsKey];
-  if (items == nil || [items count] == 0)
-    return;
-  for (NSDictionary *item in items) {
+  NSDictionary *settings = [[NSUserDefaults standardUserDefaults]
+                            persistentDomainForName:kDockBundleIdentifier];
+  for (NSDictionary *item in [settings valueForKey:kDockItemsKey]) {
     NSString *path = [item valueForKeyPath:kDockItemPathKey];
-    HGSResult *result = [HGSResult resultWithFilePath:path
-                                               source:self
-                                           attributes:nil];
-    [self indexResult:result];
+    [self indexResult:[HGSResult resultWithFilePath:path
+                                             source:self
+                                         attributes:nil]];
   }
+  [self performSelector:@selector(recacheContents)
+             withObject:nil
+             afterDelay:60.0];
 }
 
 @end
