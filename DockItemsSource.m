@@ -48,19 +48,20 @@ static NSString *const kDockItemPathKey = @"tile-data.file-data._CFURLString";
              afterDelay:delay];
 }
 
-- (void)indexItemAtPath:(NSString *)path
+- (void)indexResultAtPath:(NSString *)path
 {
   [self indexResult:[HGSResult resultWithFilePath:path
                                            source:self
                                        attributes:nil]];
+}
+
+- (void)indexItemAtPath:(NSString *)path
+{
+  [self indexResultAtPath:path];
   NSFileManager *manager = [NSFileManager defaultManager];
-  for (NSString *subpath in [manager directoryContentsAtPath:path]) {
-    if ([subpath hasPrefix:@"."]) continue;
-    subpath = [path stringByAppendingPathComponent:subpath];
-    [self indexResult:[HGSResult resultWithFilePath:subpath
-                                             source:self
-                                         attributes:nil]];
-  }
+  for (NSString *subpath in [manager directoryContentsAtPath:path])
+    if (![subpath hasPrefix:@"."])
+      [self indexResultAtPath:[path stringByAppendingPathComponent:subpath]];
 }
 
 @end
