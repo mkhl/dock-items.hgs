@@ -15,6 +15,7 @@ static NSString *const kDockItemPathKey = @"tile-data.file-data._CFURLString";
 - (void)recacheContents;
 - (void)recacheContentsAfterDelay:(NSTimeInterval)delay;
 - (void)indexItemAtPath:(NSString *)path;
+- (void)indexResultAtPath:(NSString *)path;
 @end
 
 @implementation DockItemsSource
@@ -22,30 +23,43 @@ static NSString *const kDockItemPathKey = @"tile-data.file-data._CFURLString";
 - (id)initWithConfiguration:(NSDictionary *)configuration
 {
   self = [super initWithConfiguration:configuration];
-  if (self == nil)
-    return nil;
-  if ([self loadResultsCache])
-    [self recacheContentsAfterDelay:10.0];
-  else
-    [self recacheContents];
+  if (self) {
+    if ([self loadResultsCache]) {
+      [self recacheContentsAfterDelay:10.0];
+    } else {
+      [self recacheContents];
+    }
+  }
   return self;
 }
 
 - (void)recacheContents
 {
   [self clearResultIndex];
-  NSDictionary *settings = [[NSUserDefaults standardUserDefaults]
-                            persistentDomainForName:kDockBundleIdentifier];
-  for (NSDictionary *item in [settings valueForKey:kDockItemsKey])
-    [self indexItemAtPath:[item valueForKeyPath:kDockItemPathKey]];
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  NSDictionary *dict = [defaults persistentDomainForName:kDockBundleIdentifier];
+  for (NSDictionary *item in [dict valueForKey:kDockItemsKey]) {
+    NSString *path = [item valueForKeyPath:kDockItemPathKey];
+    [self indexItemAtPath:path];
+  }
   [self recacheContentsAfterDelay:60.0];
 }
 
 - (void)recacheContentsAfterDelay:(NSTimeInterval)delay
 {
-  [self performSelector:@selector(recacheContents)
-             withObject:nil
-             afterDelay:delay];
+  SEL action = @selector(recacheContents);
+  [self performSelector:action withObject:nil afterDelay:delay];
+}
+
+- (void)indexItemAtPath:(NSString *)path
+{
+  [self indexResultAtPath:path];
+  NSFileManager *manager = [NSFileManager defaultManager];
+  for (NSString *subpath in [manager directoryContentsAtPath:path]) {
+    if (![subpath hasPrefix:@"."]) {
+      [self indexResultAtPath:[path stringByAppendingPathComponent:subpath]];
+    }
+  }
 }
 
 - (void)indexResultAtPath:(NSString *)path
@@ -53,15 +67,6 @@ static NSString *const kDockItemPathKey = @"tile-data.file-data._CFURLString";
   [self indexResult:[HGSResult resultWithFilePath:path
                                            source:self
                                        attributes:nil]];
-}
-
-- (void)indexItemAtPath:(NSString *)path
-{
-  [self indexResultAtPath:path];
-  NSFileManager *manager = [NSFileManager defaultManager];
-  for (NSString *subpath in [manager directoryContentsAtPath:path])
-    if (![subpath hasPrefix:@"."])
-      [self indexResultAtPath:[path stringByAppendingPathComponent:subpath]];
 }
 
 @end
